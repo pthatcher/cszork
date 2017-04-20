@@ -1,13 +1,15 @@
 # TODO:
+#  dancing command
+#  die command?
 #  jump back in hole
-#  don't allow negative stones
-#  get more healthy somehow
 #  do something in forest (like a maze with a clearing with a house with a guy that sells you things)
 #  money
 #  a town
+#  more efficient way to alter inventory randomly
 
 import sys
 import random
+import time
 
 class Player:
     pass
@@ -21,7 +23,6 @@ class Inventory:
 you = Player()
 you.location = "pit"
 you.health = "healthy"
-you.climb_count = 0
 
 bear = Bear()
 bear.health = "healthy"
@@ -48,14 +49,19 @@ def print_actions():
     print "  look (l)"
     print "  inventory (i)"
     print "  run (r)"
-    print "  weave ax into rope"
+    if inv.ax > 0:
+        print "  weave ax into rope"
+    print "  sleep (s)"
     if you.location == "pit":
         print "  climb with rope (cr)"
-        print "  climb with ax (ca)"
-        print "  mine with ax (ma)"
-    else:
-        print "  fight with ax (fa)"
+        if inv.ax > 0:
+            print "  climb with ax (ca)"
+            print "  mine with ax (ma)"
+    elif you.location == "ground":
+        if inv.ax > 0:
+            print "  fight with ax (fa)"
         print "  fight with stone (fs)"
+        print "  jump into pit (j)"
 
 def print_your_location():
     if you.location == "pit":
@@ -80,15 +86,22 @@ def print_bear_health():
         print "The bear is dead."
 
 def ax_climbing():
-    you.climb_count += 1
-    if you.climb_count == 3:
+    if inv.ax == 0:
+        print "You don't have an ax."
+        return
+
+    you_got_hurt()
+    if you.health == "dead":
         print "You fell and died.  I thought that by now you would learn that climbing with an ax is a bad idea."
-        you.health = "dead"
     else:
         print "You fell and got wounded."
-        you.health = "wounded"
+    
 
 def ax_fighting():
+    if inv.ax == 0:
+        print "You don't have an ax."
+        return
+
     if you.location == "ground":
         outcome = random.choice(["win", "lose"])
         if outcome == "win":
@@ -100,20 +113,33 @@ def ax_fighting():
                 inv.bear_skin += 1
             else:
                 print "A blow with the bear connected."
-                bear.health = "wounded"
+                you_got_hurt()
         elif outcome == "lose":
-            if you.health == "wounded":
+            you_got_hurt()
+            if you.health == "dead":
                 print "The bear ate you!  At least you were tasty."
-                you.health = "dead"
             else:
-
                 print "The bear slashed his claws at you!"
-                you.health = "wounded"
     else:
         print "You can't fight here."
 
+
+def ax_mining():
+    if inv.ax == 0:
+        print "You don't have an ax."
+        return
+
+    if you.location == "pit":
+        print "You received stone, but cut your finger."
+        you_got_hurt()
+        inv.stone += 1
+    else:
+        print "You can't mine here."
+
 def stone_fighting():
-    if you.location == "ground":
+    if inv.stone == 0:
+        print "You imagine yourself throwing a stone."
+    elif you.location == "ground":
         outcome = random.choice(["hit", "miss"])
         if outcome == "hit":
             if bear.health == "wounded":
@@ -130,21 +156,59 @@ def stone_fighting():
         inv.stone -= 1
     else:
         print "You hit yourself in the head with the stone."
-        if you.health == "wounded":
-            you.health = "dead"
-        else:
-            you.health = "wounded"
+        you_got_hurt()
 
-def ax_mining():
-    if you.location == "pit":
-        print "You received stone, but cut your finger."
-        if you.health == "wounded":
-            you.health = "dead"
-        else:
-            you.health = "wounded"
-        inv.stone += 1
+def you_got_hurt():
+    if you.health == "wounded":
+        you.health = "dead"
     else:
-        print "You can't mine here."
+        you.health = "wounded"
+
+def you_got_healed():
+    if you.health == "dead":
+        pass
+    else:
+        you.health = "healthy"
+    
+
+def sleep():
+    print "You are going into a deep sleep... dream world..."
+    for _ in range(5):
+        print "..."
+        time.sleep(.1)
+
+    outcome = random.choice(["stone stolen", "ax stolen", "nothing", "bear attack"])
+    if outcome == "stone stolen":
+        if inv.stone > 0:
+            inv.stone -= 1
+            print "A thief stole a stone!"
+        else:
+            print "You dreamt of a man stealing your stones.  But you have none."
+    elif outcome == "ax stolen":
+        if inv.ax > 0:
+            inv.ax = 0
+            print "A thief stole your ax!"
+        else:
+            print "You dreamt of a man stealing your ax.  But you have none."
+    elif outcome == "nothing":
+        print "Nothing was stolen.  Lucky you."
+    elif outcome == "bear attack":
+        if you.location == "pit":
+            print "You dreamt of a bear attacking you."
+        else:
+            print "The bear got you while you're sleeping."
+            you.health = "dead"
+    you_got_healed()
+    if you.health != "dead":
+        print "You're awake!  Luckily, you're still alive."
+
+def jump():
+    if you.location == "pit":
+        print "You can't jump out of a pit."
+    elif you.location == "ground":
+        print "You hit the ground painfully."
+        you_got_hurt()
+        you.location = "pit"
 
 print "Welcome to Zork.  You can ask for help (h)."
 print_your_location()
@@ -177,12 +241,16 @@ while not you.health == "dead":
     elif input == "mine with ax" or input == "ma":
         ax_mining()
     elif input == "weave ax into rope":
-        print "You cut yourself trying to bend a sharp piece of metal."  # *** make rope
-        you.health == "dead"
+        print "You cut yourself trying to bend a sharp piece of metal."
+        you_got_hurt()
+    elif input == "sleep" or input == "s":
+        sleep()
+    elif input == "jump" or input == "j":
+        jump()
     elif input == "run" or input == "r":
         if you.location == "pit":
             print "You bump your head on the wall"
-            you.health == "wounded"
+            you_got_hurt()
         elif you.location == "ground":
             if bear.health == "healthy":
                 print "You bear ate you!  At least you were tasty."
@@ -195,4 +263,6 @@ while not you.health == "dead":
     else:
         print "That doesn't make sense."
 
-print "You are dead.  You have failed your mission and your quest."
+print "******************************"
+print "*      You have died         *"
+print "******************************"
