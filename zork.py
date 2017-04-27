@@ -1,8 +1,7 @@
 # TODO:
-#  dancing command
-#  die command?
-#  jump back in hole
 #  do something in forest (like a maze with a clearing with a house with a guy that sells you things)
+#  cook command
+#  quit/die command?
 #  money
 #  a town
 #  more efficient way to alter inventory randomly
@@ -32,6 +31,9 @@ inv.ax = 1
 inv.rope = 1
 inv.stone = 0
 inv.bear_skin = 0
+inv.apple = 2
+inv.bear_meat = 0
+
 
 def print_inventory():
     print "You have: "
@@ -42,13 +44,19 @@ def print_inventory():
     if inv.stone:
         print "  " + str(inv.stone) + " stone"
     if inv.bear_skin:
-        print "  " + str(inv.bear_skin) + "  bear skin"
+        print "  " + str(inv.bear_skin) + " bear skin"
+    if inv.bear_meat:
+        print "  " + str(inv.bear_meat) + " bear meat"
+    if inv.apple:
+        print "  " + str(inv.apple) + " apple"
+        
 
 def print_actions():
     print "You can: "
     print "  look (l)"
     print "  inventory (i)"
     print "  run (r)"
+    print "  eat (e)"
     if inv.ax > 0:
         print "  weave ax into rope"
     print "  sleep (s)"
@@ -108,12 +116,13 @@ def ax_fighting():
             if bear.health == "wounded":
                 print "You beat the bear!"
                 bear.health = "dead"
-                print "He dropped a bear skin and flung you into the forest."
+                print "You gather up his skin and you chop him up into meat but he somehow flung you into the forest while you were doing so."
                 you.location = "forest"
                 inv.bear_skin += 1
+                inv.bear_meat += 3
             else:
                 print "A blow with the bear connected."
-                you_got_hurt()
+                bear.health = "wounded"
         elif outcome == "lose":
             you_got_hurt()
             if you.health == "dead":
@@ -148,6 +157,7 @@ def stone_fighting():
                 print "He dropped a bear skin and flung you into the forest."
                 you.location = "forest"
                 inv.bear_skin += 1
+                inv.bear_meat += 1
             else:
                 print "You hit the bear."
                 bear.health = "wounded"
@@ -210,36 +220,87 @@ def jump():
         you_got_hurt()
         you.location = "pit"
 
+def eat(what):
+    if what == "apple":
+        if inv.apple > 0:
+            you_got_healed()
+            inv.apple -= 1
+            print "You munched into the juicy apple and feel better." 
+        elif inv.apple == 0:
+            print "You imagine you're eating an apple.  But you don't really have one."
+    elif what == "bear meat":
+        if inv.bear_meat > 0:
+            outcome = random.choice(["rotten", "delicious"])
+            if outcome == "rotten":
+                print "That meat was rotten.  Why did you eat it?"
+                you_got_hurt()
+            elif outcome == "delicious":
+                print "You ate the bear and it was delicious.  You feel much better."
+                you_got_healed()
+            inv.bear_meat -= 1
+        else:
+            print "You imagine you're eating bear meat.  But you don't really have any."
+    
+def dance():
+    print "You did a little jig."
+
+
+shortcuts = {
+    "l" : "look",
+    "i" : "inventory",
+    "d" : "dance",
+    "cr" : "climb with rope",
+    "ca" : "climb with ax",
+    "ea" : "eat apple",
+    "eb" : "eat bear meat",
+    "ebm" : "eat bear meat",
+    "fa" : "fight with ax",
+    "fs" : "fight with stone",
+    "h" : "help"
+}
+
+commands = {
+    "dance" : dance,
+    "inventory" : print_inventory,
+    "climb with ax" : ax_climbing,
+    "fight with ax" : ax_fighting,
+    "fight with stone" : stone_fighting,
+    "mine with ax" : ax_mining
+}
+
 print "Welcome to Zork.  You can ask for help (h)."
 print_your_location()
 while not you.health == "dead":
     input = sys.stdin.readline().strip()
 
-    if input == "climb with rope" or input == "cr":
+    if input in shortcuts:
+        input = shortcuts[input]
+        # print "You used a shortcut!  You changed to " + input
+
+    if input in commands:
+        command = commands[input]
+        command()
+    elif input.startswith("eat"):
+        if input.startswith("eat "):
+            nothing, what = input.split(" ", 1)
+            eat(what)
+        else:
+            print "Eat what?"
+    elif input == "climb with rope":
         if you.location == "pit":
             you.location = "ground"
             print_your_location()
         else:
             print "You can't climb here."
-    elif input == "help" or input == "h":
+    elif input == "help":
         print_actions()
-    elif input == "look" or input == "l":
+    elif input == "look":
         print_your_location()
         print_your_health()
         if you.location == "pit":
             pass
         else:
             print_bear_health()
-    elif input == "inventory" or input == "i":
-        print_inventory()
-    elif input == "climb with ax" or input == "ca":
-        ax_climbing()
-    elif input == "fight with ax" or input == "fa":
-        ax_fighting()
-    elif input == "fight with stone" or input == "fs":
-        stone_fighting()
-    elif input == "mine with ax" or input == "ma":
-        ax_mining()
     elif input == "weave ax into rope":
         print "You cut yourself trying to bend a sharp piece of metal."
         you_got_hurt()
