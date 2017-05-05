@@ -1,9 +1,16 @@
 # TODO:
+#  more stuff to do in treehouse
+#  what happens when you run in the clearing?
+#    chickens
+#  healthy of "tired"? (energy level?)
+#  fight bear with bare hands
+#  fight with "bear" hands?
 #  do something in forest (like a maze with a clearing with a house with a guy that sells you things)
 #  cook command
 #  quit/die command?
 #  money
 #  a town
+#  make a bow and arrow
 #  more efficient way to alter inventory randomly
 
 import sys
@@ -19,12 +26,19 @@ class Bear:
 class Inventory:
     pass
 
+class Forest:
+    pass
+
 you = Player()
 you.location = "pit"
+# you.location = "forest"
 you.health = "healthy"
 
 bear = Bear()
 bear.health = "healthy"
+
+forest = Forest
+forest.trees = 10
 
 inv = Inventory()
 inv.ax = 1
@@ -33,7 +47,8 @@ inv.stone = 0
 inv.bear_skin = 0
 inv.apple = 2
 inv.bear_meat = 0
-
+inv.wood = 0
+inv.banana = 2
 
 def print_inventory():
     print "You have: "
@@ -49,9 +64,13 @@ def print_inventory():
         print "  " + str(inv.bear_meat) + " bear meat"
     if inv.apple:
         print "  " + str(inv.apple) + " apple"
+    if inv.banana:
+        print "  " + str(inv.banana) + " banana"
+    if inv.wood:
+        print "  " + str(inv.wood) + " wood"
         
 
-def print_actions():
+def help():
     print "You can: "
     print "  look (l)"
     print "  inventory (i)"
@@ -70,6 +89,13 @@ def print_actions():
             print "  fight with ax (fa)"
         print "  fight with stone (fs)"
         print "  jump into pit (j)"
+    elif you.location == "forest":
+        if inv.ax > 0:
+            print "  chop (ch)"
+        print "  climb (c)"
+    elif you.location == "treehouse":
+        if inv.ax > 0:
+            print "  chop (ch)"
 
 def print_your_location():
     if you.location == "pit":
@@ -92,6 +118,30 @@ def print_bear_health():
         print "The bear is wounded."
     elif bear.health == "dead":
         print "The bear is dead."
+
+def climb():
+    if you.location == "pit":
+        print "You tried climbing with your hands, but it fails miserably."
+        you_got_hurt()
+    elif you.location == "forest":
+        print "You find a treehouse laden with supplies."
+        you.location = "treehouse"
+    else:
+        print "You can't climb here."
+
+def climb_with_rope():
+    if you.location == "pit":
+        you.location = "ground"
+        print_your_location()
+    elif you.location == "forest":
+        outcome = random.choice(["succeed", "fall"])
+        if outcome == "fall":
+            print "You tried climbing with the rope, but you fell and got hurt.  Try climbing with you bare hands next time."
+            you_got_hurt()
+        else:
+            you.location = "treehouse"
+    else:
+        print "You can't climb here."
 
 def ax_climbing():
     if inv.ax == 0:
@@ -203,11 +253,11 @@ def sleep():
     elif outcome == "nothing":
         print "Nothing was stolen.  Lucky you."
     elif outcome == "bear attack":
-        if you.location == "pit":
-            print "You dreamt of a bear attacking you."
-        else:
+        if you.location == "ground":
             print "The bear got you while you're sleeping."
             you.health = "dead"
+        else:
+            print "You dreamt of a bear attacking you."
     you_got_healed()
     if you.health != "dead":
         print "You're awake!  Luckily, you're still alive."
@@ -244,28 +294,82 @@ def eat(what):
 def dance():
     print "You did a little jig."
 
+def run():
+    if you.location == "pit":
+        print "You bump your head on the wall"
+        you_got_hurt()
+    elif you.location == "ground":
+        if bear.health == "healthy":
+            print "You bear ate you!  At least you were tasty."
+            you.health = "dead"
+            print_your_health()
+        else:
+            print "You escape!"
+            you.location = "forest"
+            print_your_location()
+    elif you.location == "forest":
+        print "You run into a clearing with a hut in the middle."
+        you.location = "clearing"
+
+def chop():
+    if you.location == "forest":
+        if not forest.trees:
+            print "You chopped down all the trees!  You swung and hit your leg."
+            you_got_hurt()
+        else:
+            outcome = random.choice(["apple", "banana", "wood"])
+            if outcome == "apple":
+                print "You chopped down an apple tree and got apples and wood."
+                inv.apple += 20 
+                inv.wood += 10
+            elif outcome == "banana":
+                print "You chopped down a banana tree and got bananas and wood."
+                inv.banana += 100
+                inv.wood += 10
+            elif outcome == "wood":
+                print "You chopped down a tree and got lots of wood."
+                inv.wood += 20
+            else:
+                print "What kind of tree was that??? " + outcome
+            forest.trees -= 1
+    elif you.location == "treehouse":
+        print "You chopped down the tree you were in!  You die."
+        you.health = "dead"
+    else:
+        print "There is no tree here.  You swung and it your leg."
+        you_got_hurt()
 
 shortcuts = {
     "l" : "look",
     "i" : "inventory",
     "d" : "dance",
     "cr" : "climb with rope",
+    "ch" : "chop",
     "ca" : "climb with ax",
     "ea" : "eat apple",
     "eb" : "eat bear meat",
     "ebm" : "eat bear meat",
     "fa" : "fight with ax",
     "fs" : "fight with stone",
-    "h" : "help"
+    "s" : "sleep",
+    "h" : "help",
+    "c" : "climb",
+    "r" : "run",
+    "ma" : "mine with ax"
 }
 
 commands = {
     "dance" : dance,
     "inventory" : print_inventory,
+    "sleep" : sleep,
+    "climb" : climb,
+    "chop" : chop,
     "climb with ax" : ax_climbing,
     "fight with ax" : ax_fighting,
     "fight with stone" : stone_fighting,
-    "mine with ax" : ax_mining
+    "mine with ax" : ax_mining,
+    "run" : run,
+    "help" : help
 }
 
 print "Welcome to Zork.  You can ask for help (h)."
@@ -287,40 +391,19 @@ while not you.health == "dead":
         else:
             print "Eat what?"
     elif input == "climb with rope":
-        if you.location == "pit":
-            you.location = "ground"
-            print_your_location()
-        else:
-            print "You can't climb here."
-    elif input == "help":
-        print_actions()
+        climb_with_rope()
     elif input == "look":
         print_your_location()
         print_your_health()
-        if you.location == "pit":
-            pass
-        else:
+        if you.location == "ground":
             print_bear_health()
+        if you.location == "forest":
+            print "There are " + str(forest.trees) + " trees."
     elif input == "weave ax into rope":
         print "You cut yourself trying to bend a sharp piece of metal."
         you_got_hurt()
-    elif input == "sleep" or input == "s":
-        sleep()
     elif input == "jump" or input == "j":
         jump()
-    elif input == "run" or input == "r":
-        if you.location == "pit":
-            print "You bump your head on the wall"
-            you_got_hurt()
-        elif you.location == "ground":
-            if bear.health == "healthy":
-                print "You bear ate you!  At least you were tasty."
-                you.health = "dead"
-                print_your_health()
-            else:
-                print "You escape!"
-                you.location = "forest"
-                print_your_location()
     else:
         print "That doesn't make sense."
 
