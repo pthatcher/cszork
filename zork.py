@@ -1,14 +1,21 @@
 # TODO:
+#  eat banana
+#  get tired if you chop down a tree
+#  healthy of "tired"? (energy level?)
+#  build a hut
+#  go to the hut
+#  sell stuff and get money
 #  more stuff to do in treehouse
+#  more health than 2
 #  what happens when you run in the clearing?
 #    chickens
-#  healthy of "tired"? (energy level?)
 #  fight bear with bare hands
 #  fight with "bear" hands?
 #  do something in forest (like a maze with a clearing with a house with a guy that sells you things)
-#  cook command
 #  quit/die command?
 #  money
+#  fight a tiger in the forest
+#  dinosaurs in the clearing or town
 #  a town
 #  make a bow and arrow
 #  more efficient way to alter inventory randomly
@@ -18,7 +25,8 @@ import random
 import time
 
 class Player:
-    pass
+    def have_wood(player):
+        return inv.wood > 0
 
 class Bear:
     pass
@@ -31,7 +39,7 @@ class Forest:
 
 you = Player()
 you.location = "pit"
-# you.location = "forest"
+#  you.location = "forest"  # ***
 you.health = "healthy"
 
 bear = Bear()
@@ -43,10 +51,13 @@ forest.trees = 10
 inv = Inventory()
 inv.ax = 1
 inv.rope = 1
+# inv.stone = 2  # ***
 inv.stone = 0
 inv.bear_skin = 0
 inv.apple = 2
+# inv.bear_meat = 3  # ***
 inv.bear_meat = 0
+inv.roasted_bear_meat = 0
 inv.wood = 0
 inv.banana = 2
 
@@ -62,6 +73,8 @@ def print_inventory():
         print "  " + str(inv.bear_skin) + " bear skin"
     if inv.bear_meat:
         print "  " + str(inv.bear_meat) + " bear meat"
+    if inv.roasted_bear_meat:
+        print "  " + str(inv.roasted_bear_meat) + " roasted bear meat"
     if inv.apple:
         print "  " + str(inv.apple) + " apple"
     if inv.banana:
@@ -290,6 +303,15 @@ def eat(what):
             inv.bear_meat -= 1
         else:
             print "You imagine you're eating bear meat.  But you don't really have any."
+    elif what == "roasted bear meat":
+        if inv.roasted_bear_meat > 0:
+            print "That was delicious apple-roasted bear meat!  Your health improves"
+            you_got_healed()
+            you_got_healed()
+            inv.roasted_bear_meat -= 1
+        else:
+            print "You imagine eating a juicy bear steak with apples.  But you don't have any."
+
     
 def dance():
     print "You did a little jig."
@@ -339,11 +361,30 @@ def chop():
         print "There is no tree here.  You swung and it your leg."
         you_got_hurt()
 
+def cook():
+    if not you.have_wood():
+        print "You need wood to cook on a fire."
+    elif not inv.stone > 1:
+        print "You need at least two stones to start a fire."
+        you_got_hurt()
+    elif inv.apple == 0:
+        print "You can't roast bear meat without apples!"
+    elif inv.bear_meat == 0:
+        print "You wasted your apples roasting nothing."
+        inv.apple -= 1
+    else:
+        print "You start a roasty fire using your wood and stones and cook your bear meat and apples"
+        inv.bear_meat -= 1
+        inv.apple -= 1
+        inv.roasted_bear_meat += 1
+        
+
 shortcuts = {
     "l" : "look",
     "i" : "inventory",
     "d" : "dance",
     "cr" : "climb with rope",
+    "co" : "cook",
     "ch" : "chop",
     "ca" : "climb with ax",
     "ea" : "eat apple",
@@ -368,6 +409,7 @@ commands = {
     "fight with ax" : ax_fighting,
     "fight with stone" : stone_fighting,
     "mine with ax" : ax_mining,
+    "cook" : cook,
     "run" : run,
     "help" : help
 }
@@ -378,11 +420,11 @@ while not you.health == "dead":
     input = sys.stdin.readline().strip()
 
     if input in shortcuts:
-        input = shortcuts[input]
+        input = shortcuts.get(input)
         # print "You used a shortcut!  You changed to " + input
 
     if input in commands:
-        command = commands[input]
+        command = commands.get(input)
         command()
     elif input.startswith("eat"):
         if input.startswith("eat "):
