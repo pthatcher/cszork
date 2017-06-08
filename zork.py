@@ -1,9 +1,19 @@
 # TODO:
+#  *** Save game ***
+#    important information:
+#      location
+#      health
+#      number of trees
+#      bear health
+#      inventory
+#      
+#  chickens in the field by the log cabin hut and in tree house
 #  eat banana
+#  eat fish doesn't show an error
 #  get tired if you chop down a tree
 #  healthy of "tired"? (energy level?)
-#  build a hut
-#  go to the hut
+#  build a log cabin hut
+#  go to the log cabin hut
 #  sell stuff and get money
 #  more stuff to do in treehouse
 #  more health than 2
@@ -37,16 +47,22 @@ class Inventory:
 class Forest:
     pass
 
+class Supplies:
+    pass
+
 you = Player()
 you.location = "pit"
-#  you.location = "forest"  # ***
+# you.location = "clearing"  # ***
 you.health = "healthy"
 
 bear = Bear()
 bear.health = "healthy"
 
-forest = Forest
+forest = Forest()
 forest.trees = 10
+
+supplies = Supplies()
+supplies.things = 3
 
 inv = Inventory()
 inv.ax = 1
@@ -60,11 +76,14 @@ inv.bear_meat = 0
 inv.roasted_bear_meat = 0
 inv.wood = 0
 inv.banana = 2
+inv.chicken = 0
+inv.crowbar = 0
+inv.armor = 0
 
 def print_inventory():
     print "You have: "
     if inv.ax:
-        print "  " + str(inv.ax) + " ax"
+        print "  " + str(inv.ax) + " axes"
     if inv.rope:
         print "  " + str(inv.rope) + " rope"
     if inv.stone:
@@ -81,6 +100,12 @@ def print_inventory():
         print "  " + str(inv.banana) + " banana"
     if inv.wood:
         print "  " + str(inv.wood) + " wood"
+    if inv.chicken:
+        print "  " + str(inv.chicken) + " chickens"
+    if inv.armor:
+        print "  " + str(inv.armor) + " armor"
+    if inv.crowbar:
+        print "  " + str(inv.crowbar) + " crowbars"
         
 
 def help():
@@ -113,16 +138,26 @@ def help():
 def print_your_location():
     if you.location == "pit":
         print "You are in a pit."
-    if you.location == "ground":
-        print "You are on the ground.  There is an bear."
-    if you.location == "forest":
+    elif you.location == "ground":
+        print "You are on the ground.  There is a bear."
+    elif you.location == "forest":
         print "You are in the forest."
+    elif you.location == "clearing":
+        print "You are in a clearing.  There is a log cabin hut in the middle.  There are chickens walking around."
+    elif you.location == "roof":
+        print "You are on the roof of a log cabin hut in a clearing."
+    elif you.location == "treehouse":
+        print "You are in a treehouse.  There are some supplies.  There are " + str(supplies.things) + " things in the supplies."
+    else:
+        print "you.location == '" + you.location + "'"
 
 def print_your_health():
     if you.health == "healthy":
         print "You are healthy."
-    if you.health == "wounded":
+    elif you.health == "wounded":
         print "You are wounded."
+    else:
+        print "you.health == '" + you.health + "' state."
 
 def print_bear_health():
     if bear.health == "healthy":
@@ -139,6 +174,13 @@ def climb():
     elif you.location == "forest":
         print "You find a treehouse laden with supplies."
         you.location = "treehouse"
+    elif you.location == "clearing":
+        print "You are now on top of the log cabin hut."
+        you.location = "roof"
+    elif you.location == "roof":
+        print "You try to climb an invisible wall, but fall off the roof and plow a tunnel through the ground all the way back to the pit."
+        you.location = "pit"
+        you_got_hurt()
     else:
         print "You can't climb here."
 
@@ -153,6 +195,15 @@ def climb_with_rope():
             you_got_hurt()
         else:
             you.location = "treehouse"
+    elif you.location == "clearing":
+        print "You lasso the rope around the chimney and pull it down.  The man in the log cabin hut comes out and shoots you."
+        you.location = "roof"
+        # TODO: Random outcome of where he shot you.
+        you_got_hurt()
+    elif you.location == "roof":
+        print "You climb down the chimney into a fire and are burned."
+        # TODO: Random outcome of where he shot you.
+        you_got_hurt()
     else:
         print "You can't climb here."
 
@@ -282,6 +333,15 @@ def jump():
         print "You hit the ground painfully."
         you_got_hurt()
         you.location = "pit"
+    elif you.location == "clearing":
+        print "You jump so far you land in the pit (???).  Too bad. So sad.  Have fun repeating all that stuff."
+        you.location = "pit"
+    elif you.location == "roof":
+        print "You hop of the roof with no problem."
+        you.location = "clearing"
+    elif you.location == "treehouse":
+        print "You jump so far you land in the pit (???).  Too bad. So sad.  Have fun repeating all that stuff."
+    
 
 def eat(what):
     if what == "apple":
@@ -311,7 +371,13 @@ def eat(what):
             inv.roasted_bear_meat -= 1
         else:
             print "You imagine eating a juicy bear steak with apples.  But you don't have any."
-
+    elif what == "banana":
+        if inv.banana > 0:
+            print "That was a good banana!"
+            you_got_healed()
+            inv.banana -= 1
+        else:
+            print "You don't have a banana!"
     
 def dance():
     print "You did a little jig."
@@ -330,8 +396,18 @@ def run():
             you.location = "forest"
             print_your_location()
     elif you.location == "forest":
-        print "You run into a clearing with a hut in the middle."
+        print "You run into a clearing with a log cabin hut in the middle."
         you.location = "clearing"
+    elif you.location == "clearing":
+        print "You run back to the forest."
+        you.location = "forest"
+    elif you.location == "roof":
+        print "You run across the air (you're magic!) but you land in the pit.  Don't press your luck."
+        you.location = "pit"
+    elif you.location == "treehouse":
+        print "You run across the air (you're magic!) but you land in the pit.  Don't press your luck."
+        you.location = "pit"
+
 
 def chop():
     if you.location == "forest":
@@ -357,6 +433,10 @@ def chop():
     elif you.location == "treehouse":
         print "You chopped down the tree you were in!  You die."
         you.health = "dead"
+    elif you.location == "clearing":
+        # TODO: Random outcome
+        print "You chopped down the wheat of the owner of the log cabin hut.  He's not happy with you so he shot at you."
+        you_got_hurt()
     else:
         print "There is no tree here.  You swung and it your leg."
         you_got_hurt()
@@ -378,6 +458,67 @@ def cook():
         inv.apple -= 1
         inv.roasted_bear_meat += 1
         
+def grab():
+    if you.location == "treehouse":
+        if supplies.things < 1:
+            print "There's nothing left.  You took it all, you selfish thief."
+        else:
+            supplies.things -= 1
+            outcome = random.choice(["crowbar", "suite of armor", "ax"])
+            print "You grabbed a " + outcome
+            if outcome == "crowbar":
+                inv.crowbar += 1
+            elif outcome == "ax":
+                inv.ax += 1
+            elif outcome == "suite of armor":
+                inv.armor += 1
+            else:
+                print "Nothing!!! Mwahahahahah"
+    else:
+        print "There's nothing to grab."
+
+code_from_location_dictionary = {
+    "ground": "g",
+    "forest": "f",
+    "clearing": "c",
+    "treehouse": "t",
+    "roof": "r",
+    "pit": "p"
+}
+
+location_from_code_dictionary = {
+    "g" : "ground",
+    "f" : "forest",
+    "c" : "clearing",
+    "t" : "treehouse",
+    "r" : "roof",
+    "p" : "pit"
+}
+
+def save_game():
+    name = "saved-game"
+    file = open(name, "w")
+
+    location_code = code_from_location_dictionary.get(you.location)
+    file.write(location_code)
+
+    file.close()
+    print "Saved to '" + name + "'"
+
+def continue_game():
+    name = "saved-game"
+    file = open(name, "r")
+    location_code = file.read(1)
+
+    you.location = location_from_code_dictionary.get(location_code)
+    print_your_location()
+
+#    you.health = "what it was before"
+#    forest.trees = "what it was before"    
+#    bear.health = "what it was before"
+#    inv = "what it was before"
+#    print "Continuing game from '" + name + "'"
+#    print "Your location is '" + you.location + "'"
 
 shortcuts = {
     "l" : "look",
@@ -388,7 +529,7 @@ shortcuts = {
     "ch" : "chop",
     "ca" : "climb with ax",
     "ea" : "eat apple",
-    "eb" : "eat bear meat",
+    "eb" : "eat banana",
     "ebm" : "eat bear meat",
     "fa" : "fight with ax",
     "fs" : "fight with stone",
@@ -396,7 +537,11 @@ shortcuts = {
     "h" : "help",
     "c" : "climb",
     "r" : "run",
-    "ma" : "mine with ax"
+    "j" : "jump",
+    "g" : "grab",
+    "ma" : "mine with ax",
+    "z" : "continue",
+    "s" : "save"
 }
 
 commands = {
@@ -408,10 +553,14 @@ commands = {
     "climb with ax" : ax_climbing,
     "fight with ax" : ax_fighting,
     "fight with stone" : stone_fighting,
+    "jump" : jump,
     "mine with ax" : ax_mining,
     "cook" : cook,
+    "grab" : grab,
     "run" : run,
-    "help" : help
+    "help" : help,
+    "save" : save_game,
+    "continue" : continue_game
 }
 
 print "Welcome to Zork.  You can ask for help (h)."
