@@ -1,10 +1,7 @@
 # TODO:
 #  *** Save game ***
 #    important information:
-#      location
-#      health
 #      number of trees
-#      bear health
 #      inventory
 #      
 #  chickens in the field by the log cabin hut and in tree house
@@ -29,6 +26,9 @@
 #  a town
 #  make a bow and arrow
 #  more efficient way to alter inventory randomly
+#
+# Bugs:
+# - If you climb with an ax on the ground, you get hurt
 
 import sys
 import random
@@ -495,12 +495,30 @@ location_from_code_dictionary = {
     "p" : "pit"
 }
 
+code_from_health_dictionary = {
+    "healthy": "h",
+    "wounded": "w",
+    "dead": "d"
+}
+
+health_from_code_dictionary = {
+    "h": "healthy",
+    "w": "wounded",
+    "d": "dead"
+}
+
 def save_game():
     name = "saved-game"
     file = open(name, "w")
 
     location_code = code_from_location_dictionary.get(you.location)
     file.write(location_code)
+
+    health_code = code_from_health_dictionary.get(you.health)
+    file.write(health_code)
+
+    bear_health_code = code_from_health_dictionary.get(bear.health)
+    file.write(bear_health_code)
 
     file.close()
     print "Saved to '" + name + "'"
@@ -509,11 +527,20 @@ def continue_game():
     name = "saved-game"
     file = open(name, "r")
     location_code = file.read(1)
+    health_code = file.read(1)
+    bear_health_code = file.read(1)
 
     you.location = location_from_code_dictionary.get(location_code)
     print_your_location()
 
+    you.health = health_from_code_dictionary.get(health_code)
+    print_your_health()
+
+    bear.health = health_from_code_dictionary.get(bear_health_code)
+    print_bear_health()
+
 #    you.health = "what it was before"
+
 #    forest.trees = "what it was before"    
 #    bear.health = "what it was before"
 #    inv = "what it was before"
@@ -541,7 +568,8 @@ shortcuts = {
     "g" : "grab",
     "ma" : "mine with ax",
     "z" : "continue",
-    "s" : "save"
+    "s" : "save",
+    "q" : "quit"
 }
 
 commands = {
@@ -565,7 +593,13 @@ commands = {
 
 print "Welcome to Zork.  You can ask for help (h)."
 print_your_location()
-while not you.health == "dead":
+while True:
+    if you.health == "dead":
+        print "******************************"
+        print "*      You have died         *"
+        print "******************************"
+        break
+
     input = sys.stdin.readline().strip()
 
     if input in shortcuts:
@@ -595,9 +629,8 @@ while not you.health == "dead":
         you_got_hurt()
     elif input == "jump" or input == "j":
         jump()
+    elif input == "quit":
+        save_game()
+        break
     else:
         print "That doesn't make sense."
-
-print "******************************"
-print "*      You have died         *"
-print "******************************"
