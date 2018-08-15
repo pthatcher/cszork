@@ -65,7 +65,11 @@ supplies = Supplies()
 supplies.things = 3
 
 inv = Inventory()
+<<<<<<< HEAD
+inv.ax = 0
+=======
 inv.ax = 2
+>>>>>>> master
 inv.rope = 1
 # inv.stone = 2  # ***
 inv.stone = 0
